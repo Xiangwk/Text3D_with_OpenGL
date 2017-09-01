@@ -54,6 +54,7 @@ void Geometry::draw(MyShader shader)
 	updataPrimitives();
 	//for (auto &p : _primitive_list)
 	p.draw(shader);
+	p.deleteBuffers();
 }
 
 void Geometry::output()
