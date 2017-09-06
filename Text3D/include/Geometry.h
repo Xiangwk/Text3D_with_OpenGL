@@ -12,15 +12,7 @@ class Geometry
 {
 public:
 	//构造函数
-	Geometry() {}
-	//复制构造函数
-	Geometry(const Geometry &geom)
-	{
-		_vertices = geom._vertices;
-		_indices = geom._indices;
-		_mode_list = geom._mode_list;
-		_normals = geom._normals;
-	}
+	Geometry() = default;
 	Geometry(Vec3Array& va, std::vector<ElementArray>& el)
 	{
 		_vertices = va;
@@ -29,7 +21,7 @@ public:
 	~Geometry() 
 	{
 		//for (auto &p : _primitive_list)
-			p.deleteBuffers();
+			//p.deleteBuffers();
 	}
 
 	//获取顶点数组
@@ -70,6 +62,16 @@ public:
 	//输出数据到文件
 	void output();
 
+	void updataPrimitives()
+	{
+		/*if (_primitive_list.empty())
+		{
+		for (int i = 0; i < _indices.size(); ++i)
+		_primitive_list.push_back(Primitive(GL_TRIANGLES, _vertices, _indices[i], _normals[i]));
+		}*/
+		p = Primitive(GL_TRIANGLES, _vertices, getIndices(), getNormalArray());
+	}
+
 private:
 	Vec3Array _vertices;                       //顶点数组
 	std::vector<ElementArray> _indices;        //索引列表
@@ -81,15 +83,7 @@ private:
 	//std::vector<Primitive> _primitive_list;    //绘制图元
 	Primitive p;
 	//更新图元列表，这个函数应该在绘制图元之前调用
-	void updataPrimitives()
-	{
-		/*if (_primitive_list.empty())
-		{
-			for (int i = 0; i < _indices.size(); ++i)
-			_primitive_list.push_back(Primitive(GL_TRIANGLES, _vertices, _indices[i], _normals[i]));
-		}*/
-		p = Primitive(GL_TRIANGLES, _vertices, getIndices(), getNormalArray());
-	}
+	
 };
 
 //用来收集生成好的GL_TRIANGLES索引

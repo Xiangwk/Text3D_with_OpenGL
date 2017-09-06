@@ -29,10 +29,11 @@ class Primitive
 private:
 	GLuint VAO, VBO, EBO;
 	GLenum mode;     //绘制图元类型
-	void SetupVAO();
-public:
 	std::vector<Vertex> vertices;
 	ElementArray indices;
+	void SetupVAO();
+public:
+	
 	Primitive() = default;
 	Primitive(GLenum m, Vec3Array vec3s, ElementArray eles, Vec3Array norms);
 	~Primitive() {}

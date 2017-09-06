@@ -49,9 +49,6 @@ void DoMovement();
 //初始化窗口选项
 void InitWindowOption();
 
-//计算生成3D文字几何体的顶点数组和各表面索引
-void computeGlyphGeometry(Geometry &glyph, float width);
-
 int main()
 {
 	InitWindowOption();
@@ -86,6 +83,9 @@ int main()
 		//调试用输出
 		//glyph.output();
 	}
+	//在绘制之前，我们必须要将每个glyph中的数据发送到GPU
+	for (auto &g : geometries)
+		g.updataPrimitives();
 
 	MyShader text_shader("shader/VertShader.vert", "shader/FragShader.frag");
 

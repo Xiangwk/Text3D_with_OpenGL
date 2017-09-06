@@ -33,7 +33,7 @@ namespace FreeType
 		GLfloat coord_scale;                     //因为FreeType中采用1/64像素单位描述字形参量，这个值为1/64
 
 		//默认构造函数
-		Char3DInfo() : num_steps(3), coord_scale(1.0 / 64.0) {}
+		Char3DInfo() : num_steps(10), coord_scale(1.0 / 64.0) {}
 
 		//完成当前轮廓线的数据采集
 		void completeCurrentGeom()

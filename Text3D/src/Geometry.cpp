@@ -51,15 +51,15 @@ void Geometry::accept(PrimitiveIndexFunctor& functor) const
 
 void Geometry::draw(MyShader shader)
 {
-	updataPrimitives();
+	//updataPrimitives();
 	//for (auto &p : _primitive_list)
 	p.draw(shader);
-	p.deleteBuffers();
+	//p.deleteBuffers();
 }
 
 void Geometry::output()
 {
-	updataPrimitives();
+	//updataPrimitives();
 
 	std::ofstream fout;
 	fout.open("output/verts_data_3d_I.txt");
