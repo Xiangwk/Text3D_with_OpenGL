@@ -24,4 +24,10 @@ FreeType的文档请看这里：https://www.freetype.org/freetype2/docs/document
 GLU库的文档可以看这里https://khronos.org/registry/OpenGL/specs/gl/glu1.3.pdf
 Windows系统的字体文件可以在C:\Windows\Fonts路径下找到！
 
+工程中需要包含的第三方依赖库如下图：
+
+<img src="http://ovi8mw7d8.bkt.clouddn.com/Text3D%E5%A4%96%E9%83%A8%E4%BE%9D%E8%B5%96.PNG" width="500" />
+
+其中opengl32.lib和glu32.lib是已经在Windows系统中存在的了，其他系统尚不清楚，抱歉~
+
 文档尚未完成，敬请期待！README NOT COMPLETED YET!
