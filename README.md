@@ -18,10 +18,15 @@ Render 3D Texts with OpenGL!
 4. 使用OpenGL对3D文字模型进行渲染；
 
 注：
+
 所有第三方依赖库都放在了3rdParty.rar里面，而实现文件都在Text3D文件夹下面！
+
 FreeType的文档请看这里：https://www.freetype.org/freetype2/docs/documentation.html
+
 在处理图形学中的数学类型时，我们使用了glm库，参考这里：https://github.com/g-truc/glm/tags
+
 GLU库的文档可以看这里https://khronos.org/registry/OpenGL/specs/gl/glu1.3.pdf
+
 Windows系统的字体文件可以在C:\Windows\Fonts路径下找到！
 
 工程中需要包含的第三方依赖库如下图：
