@@ -39,4 +39,6 @@ Windows系统的字体文件可以在C:\Windows\Fonts路径下找到！
 
 <img src="http://ovi8mw7d8.bkt.clouddn.com/3D%E6%96%87%E5%AD%97%E5%B1%95%E7%A4%BA.png" width="400" /><img src="http://ovi8mw7d8.bkt.clouddn.com/3D%E6%96%87%E5%AD%97%E7%BA%BF%E6%A1%86%E6%A8%A1%E5%BC%8F%E5%B1%95%E7%A4%BA.png" width="400" />
 
-文档尚未完成，敬请期待！README NOT COMPLETED YET!
+项目仍在持续更行中，敬请期待！
+
+文档尚未完成，README NOT COMPLETED YET！
