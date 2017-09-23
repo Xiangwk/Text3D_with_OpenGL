@@ -88,27 +88,27 @@ void Tessellator::reset()
 	_errorCode = 0;
 }
 
-void Tessellator::retessellatePolygons(Geometry &geom)
+void Tessellator::retessellatePolygons(Glyph3D &geom)
 {
 	// turn the contour list into primitives, a little like Tessellator does but more generally
-	Vec3Array* vertices = geom.getVertexArray();
+	Vec3Array* vertices = geom.getVertexPos();
 
-	if (!vertices || vertices->empty() || geom.getPrimitiveSetList().empty()) return;
+	if (!vertices || vertices->empty() || geom._elements.empty()) return;
 
 	_index = 0; // reset the counter for indexed vertices
 	_extraPrimitives = 0;
 	if (!_numberVerts)
 	{
-		_numberVerts = geom.getVertexArray()->size();
+		_numberVerts = geom.getVertexPos()->size();
 		// save the contours for complex (winding rule) tessellations
-		_Contours = geom.getPrimitiveSetList();
+		_Contours = geom._elements;
 	}
 
 	// remove the existing primitives.
-	unsigned int nprimsetoriginal = geom.getNumPrimitiveSets();
-	if (nprimsetoriginal) geom.removePrimitiveSet(0, nprimsetoriginal);
+	unsigned int nprimsetoriginal = geom.getElementsNum();
+	if (nprimsetoriginal) geom.removeElements(0, nprimsetoriginal);
 
-	// the main difference from osgUtil::Tessellator for Geometry sets of multiple contours is that the begin/end tessellation
+	// the main difference from osgUtil::Tessellator for Glyph3D sets of multiple contours is that the begin/end tessellation
 	// occurs around the whole set of contours.
 	beginTessellation();
 	// process all the contours into the Tessellator
@@ -155,11 +155,11 @@ void Tessellator::addVertex(glm::vec3* vertex)
 	}
 }
 
-void Tessellator::handleNewVertices(Geometry& geom, VertexPtrToIndexMap &vertexPtrToIndexMap)
+void Tessellator::handleNewVertices(Glyph3D& geom, VertexPtrToIndexMap &vertexPtrToIndexMap)
 {
 	if (!_newVertexList.empty())
 	{
-		Vec3Array* vertices = geom.getVertexArray();
+		Vec3Array* vertices = geom.getVertexPos();
 
 		// now add any new vertices that are required.
 		for (NewVertexList::iterator itr = _newVertexList.begin();
@@ -238,9 +238,9 @@ void Tessellator::errorCallback(GLenum errorCode, void* userData)
 	((Tessellator*)userData)->error(errorCode);
 }
 
-void Tessellator::collectTessellation(Geometry &geom, unsigned int originalIndex)
+void Tessellator::collectTessellation(Glyph3D &geom, unsigned int originalIndex)
 {
-	Vec3Array* vertices = geom.getVertexArray();
+	Vec3Array* vertices = geom.getVertexPos();
 	VertexPtrToIndexMap vertexPtrToIndexMap;
 
 	// populate the VertexPtrToIndexMap.
@@ -272,46 +272,40 @@ void Tessellator::collectTessellation(Geometry &geom, unsigned int originalIndex
 	}
 }
 
-void computeGlyphGeometry(Geometry &glyph, float width)
+void computeGlyphGeometry(Glyph3D &glyph, float width)
 {
-	Vec3Array *vertices = glyph.getVertexArray();
+	Vec3Array *vertices = glyph.getVertexPos();
 	Vec3Array origin_vertices = *vertices;
 	Vec3Array normals;
-	std::vector<ElementArray> origin_indices = glyph.getPrimitiveSetList();
-	//std::cout << origin_indices.size() << std::endl;
+	std::vector<ElementArray> origin_indices = glyph._elements;
 
-	//将原始字形进行三角化
 	Tessellator ts;
 	ts.retessellatePolygons(glyph);
 
-	//将处理过的字形的索引全部转化为三角索引
-	//注：GLU库三角化可能生成三种类型的图元，GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
+	//generate triangle indices
 	TriangleIndexFunctor<CollectTriangleIndicesFunctor> ctif;
 	glyph.accept(ctif);
 	CollectTriangleIndicesFunctor::Indices& indices = ctif._indices;
 
-	//将原始图元列表清空，这里要重新构建三角图元列表
-	//其中每一个封闭曲面为一个绘制图元，整个字形几何体共用顶点数组
-	glyph.getPrimitiveSetList().clear();
+	//rebuild the primitives of text3D, generate front face, wall face and back face
+	glyph._elements.clear();
 	glyph.clearModeList();
 
 	if (indices.empty()) std::cout << "The new indices create failed!" << std::endl;
 
-	//构建3D文字前向面索引
+	//front face
 	ElementArray front_face;
 	for (unsigned int i = 0; i < indices.size(); ++i)
 	{
 		front_face.push_back(indices[i]);
 		normals.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
 	}
-	/*for (unsigned int i = 0; i < origin_vertices.size(); ++i)
-	normals.push_back(glm::vec3(0.0f, 0.0f, 1.0f));*/
 
 	glyph.addPrimitiveSet(&front_face);
 	glyph.addNormalArray(normals);
 	glyph.addMode(GL_TRIANGLES);
 
-	//构建3D文字后向面索引
+	//back face
 	const unsigned int NULL_VALUE = UINT_MAX;
 	ElementArray back_indices;
 	back_indices.resize(vertices->size(), NULL_VALUE);
@@ -351,13 +345,12 @@ void computeGlyphGeometry(Geometry &glyph, float width)
 		normals.push_back(glm::vec3(0.0f, 0.0f, -1.0f));
 		normals.push_back(glm::vec3(0.0f, 0.0f, -1.0f));
 	}
-	/*for (unsigned int i = 0; i < origin_vertices.size(); ++i)
-	normals.push_back(glm::vec3(0.0f, 0.0f, -1.0f));*/
+	
 	glyph.addPrimitiveSet(&back_face);
 	glyph.addNormalArray(normals);
 	glyph.addMode(GL_TRIANGLES);
 
-	//构建3D文字侧表面索引
+	//wall face
 	unsigned int orig_size = origin_vertices.size();
 	ElementArray frontedge_indices, backedge_indices;
 	frontedge_indices.resize(orig_size, NULL_VALUE);

@@ -1,24 +1,24 @@
-#include "..\include\Geometry.h"
+#include "..\include\Glyph3D.h"
 
-bool Geometry::removePrimitiveSet(unsigned int b, unsigned int numToRemove)
+bool Glyph3D::removeElements(unsigned int b, unsigned int numToRemove)
 {
 	if (numToRemove == 0) return false;
-	if (b < _indices.size())
+	if (b < _elements.size())
 	{
-		if (b + numToRemove <= _indices.size())
+		if (b + numToRemove <= _elements.size())
 		{
-			_indices.erase(_indices.begin() + b, _indices.begin() + b + numToRemove);
+			_elements.erase(_elements.begin() + b, _elements.begin() + b + numToRemove);
 		}
 		else
 		{
-			std::cout << "要求删除的范围超出数组的最大范围，删除到数组末端！" << std::endl;
-			_indices.erase(_indices.begin() + b, _indices.end());
+			std::cout << "the range required to remove is out of range! remove to the end of ContourList." << std::endl;
+			_elements.erase(_elements.begin() + b, _elements.end());
 		}
 		return true;
 	}
 }
 
-Vec3Array Geometry::getNormalArray()
+Vec3Array Glyph3D::getNormalArray() const
 {
 	Vec3Array normal;
 	for (const auto &norm : _normals)
@@ -27,46 +27,32 @@ Vec3Array Geometry::getNormalArray()
 	return normal;
 }
 
-ElementArray Geometry::getIndices()
+ElementArray Glyph3D::getIndices() const
 {
 	ElementArray indices;
-	for (auto iteri = _indices.begin(); iteri != _indices.end(); ++iteri)
-		for (auto iterj = (*iteri).begin(); iterj != (*iteri).end(); ++iterj)
-			indices.push_back(*iterj);
+	for (const auto &c : _elements)
+		for (const auto &i : c)
+			indices.push_back(i);
 
 	return indices;
 }
 
-void Geometry::accept(PrimitiveIndexFunctor& functor) const
+void Glyph3D::accept(PrimitiveIndexFunctor& functor) const
 {
 	const Vec3Array* vertices = &_vertices;
 
 	if (!vertices || vertices->size() == 0) return;
 
-	for (unsigned int i = 0; i < _indices.size(); ++i)
-	{
-		functor.drawElements(_mode_list[i], _indices[i].size(), &(_indices[i].front()));
-	}
+	for (unsigned int i = 0; i < _elements.size(); ++i)
+		functor.drawElements(_modeList[i], _elements[i].size(), &(_elements[i].front()));
 }
 
-void Geometry::draw(MyShader shader)
+void Glyph3D::output()
 {
-	//updataPrimitives();
-	//for (auto &p : _primitive_list)
-	p.draw(shader);
-	//p.deleteBuffers();
-}
-
-void Geometry::output()
-{
-	//updataPrimitives();
-
 	std::ofstream fout;
-	fout.open("output/verts_data_3d_I.txt");
+	fout.open("verts_data_3d_I.txt");
 	if (!fout)
-	{
 		std::cout << "verts_data.txt open failed!" << std::endl;
-	}
 
 	fout << "Size of vertices: " << _vertices.size() << std::endl;
 	fout << "Vertices: " << std::endl;
@@ -89,9 +75,7 @@ void Geometry::output()
 	Vec3Array normals = getNormalArray();
 	fout << "Size of normals: " << normals.size() << std::endl;
 	for (auto norm : normals)
-	{
 		fout << norm.x << ", " << norm.y << ", " << norm.z << std::endl;
-	}
 	fout << std::endl;
 
 	fout.close();

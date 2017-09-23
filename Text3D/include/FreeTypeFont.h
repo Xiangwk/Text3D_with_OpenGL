@@ -1,7 +1,7 @@
-//使用FreeType2解析字体文件，将轮廓线的绘制点信息取出
-
-#ifndef FREETYPE_FONT_H_
-#define FREETYPE_FONT_H_
+//use freetype2 to decompose the glyph's outline
+//a distinction should be made between the concept of outline and contour
+//outline is the glyph's whole outline and contours are the seperated lines in the outline
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -15,49 +15,44 @@
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
 
-#include "Primitive.h"
-#include "Geometry.h"
+#include "Glyph3D.h"
 
 namespace FreeType
 {
-	//这个类用来存放outline分解之后的顶点数组和索引数组
-	//以及每条contour对应的绘制单元
+	//this class used to store the vertices and contour list of the original glyph
+	//note that the outline is consist of many coutours so the contour list is an array of an unsigned array
 	struct Char3DInfo
 	{
-		//成员变量
-		Vec3Array vertices;                      //当前轮廓线的顶点数组
-		ElementArray current_indices;            //当前轮廓线的索引数组
-		std::vector<ElementArray> contour_list;  //轮廓线列表，每条轮廓线需要对应不同的索引数组，但是共享同一个顶点数组
-		glm::vec3 previous;                      //当前绘制点的前一个顶点
-		GLuint num_steps;                        //贝塞尔曲线绘制采样步数
-		GLfloat coord_scale;                     //因为FreeType中采用1/64像素单位描述字形参量，这个值为1/64
+		Vec3Array vertices;                      //store the postions of glyph vertex
+		ElementArray current_indices;            //store the indices of coutour
+		std::vector<ElementArray> contour_list;  //contour's indices list
+		glm::vec3 previous;                      //the previous vertex of current vertex(use to sample Bezier)
+		unsigned int num_steps;                  //number of step to sample the Bezier
+		float coord_scale;                       //freetype use the 1/64 pixel format means we shoule set this value to 1/64
 
-		//默认构造函数
 		Char3DInfo() : num_steps(10), coord_scale(1.0 / 64.0) {}
 
-		//完成当前轮廓线的数据采集
-		void completeCurrentGeom()
+		void completeCurrentContour()
 		{
 			if (!vertices.empty() && !current_indices.empty())
 				contour_list.push_back(current_indices);
 			current_indices.clear();
 		}
-		//获取解析完成的字形几何体，每一个字形对应一个几何体
-		Geometry get()
+		//return the data to Glyph3D to do triangulation
+		Glyph3D get()
 		{
-			completeCurrentGeom();
-			return Geometry(vertices, contour_list);
+			completeCurrentContour();
+			return Glyph3D(vertices, contour_list);
 		}
 
-		//向当前顶点数组和索引数组中添加顶点及其索引
 		void addVertex(glm::vec3 pos)
 		{
 			previous = pos;
 			pos *= coord_scale;
-			//避免连续添加相同的顶点
+			//no need to add the same vertex
 			if (!vertices.empty() && vertices.back() == pos)
 				return;
-			//对于一条contour中非连续的重复点，无需重复添加
+			//for the closed contour
 			if (!current_indices.empty() && vertices[current_indices[0]] == pos)
 				current_indices.push_back(current_indices[0]);
 			else
@@ -65,20 +60,19 @@ namespace FreeType
 				current_indices.push_back(vertices.size());
 				vertices.push_back(pos);
 			}
-
 		}
-		//开始绘制新的轮廓线
+		//move to a new contour
 		void moveTo(const glm::vec2 &pos)
 		{
-			completeCurrentGeom();
+			completeCurrentContour();
 			addVertex(glm::vec3(pos.x, pos.y, 0));
 		}
-		//绘制直线段
+		//draw line segment
 		void lineTo(const glm::vec2 &pos)
 		{
 			addVertex(glm::vec3(pos.x, pos.y, 0));
 		}
-		//绘制二次贝塞尔曲线
+		//draw conic Bezier
 		void conicTo(const glm::vec2 &control, const glm::vec2 &pos)
 		{
 			glm::vec3 p0 = previous;
@@ -89,17 +83,15 @@ namespace FreeType
 			GLfloat u = 0;
 			for (unsigned int i = 0; i <= num_steps; ++i)
 			{
-				GLfloat w = 1;   //w可能只是一个调整参数
+				GLfloat w = 1;
 				GLfloat bs = 1.0 / ((1 - u)*(1 - u) + 2 * (1 - u)*u*w + u*u);
-				//注意：这里直接copy的OSG里面的公式，bs貌似只是一个调整参数，原贝塞尔曲线方程里没有这个bs（B-Spline？）
-				//而且当w的值为1时，bs永远等于1
 				glm::vec3 p = (p0*((1 - u)*(1 - u)) + p1*(2 * (1 - u)*u*w) + p2*(u*u)) * bs;
 				addVertex(p);
 
 				u += dt;
 			}
 		}
-		//绘制三次贝塞尔曲线
+		//draw cubic Bezier
 		void cubicTo(const glm::vec2 &control1, const glm::vec2 &control2, const glm::vec2 &pos)
 		{
 			glm::vec3 p0 = previous;
@@ -124,11 +116,10 @@ namespace FreeType
 				u += dt;
 			}
 		}
-	};  //Char3DInfo定义结束
+	};  //end of Char3DInfo
 
-	//这四个函数用于FT_Outline_Decompose中的FT_Funcs参数
-	//他们用来回调Char3DInfo中真正执行轮廓分解的四个同名函数
-	//返回值0代表处理成功
+	//callback function use to decompose outline
+	//return 0 means successful
 	int moveTo(const FT_Vector* to, void* user)
 	{
 		Char3DInfo* char3d = (Char3DInfo*)user;
@@ -156,8 +147,7 @@ namespace FreeType
 			glm::vec2(to->x, to->y));
 		return 0;
 	}
-}   //命名空间FreeType关闭
-
+}   //close namespace FreeType
 
 
 class FreeTypeFont
@@ -169,11 +159,11 @@ public:
 		FT_Done_Face(face);
 		FT_Done_FreeType(ft);
 	}
-	Geometry getGlyph3D();
+	Glyph3D getGlyph3D();
 	GLuint advanceX() const { return AdvanceX; }
 
 private:
-	wchar_t charcode;    //字符编码
+	wchar_t charcode;
 	FT_Library ft;
 	FT_Face face;
 	GLuint AdvanceX;
@@ -182,30 +172,25 @@ private:
 
 FreeTypeFont::FreeTypeFont(wchar_t code, char *font_file)
 {
-	//初始化FreeType
 	if (FT_Init_FreeType(&ft))
 		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
-	//新建一个face
 	if (FT_New_Face(ft, font_file, 0, &face))
 		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
-	//设置文字大小
 	FT_Set_Pixel_Sizes(face, 0, 24);
 
 	charcode = code;
-	//加载文字以获取步进宽度（不加载文字是无法获取步进宽度的）
-	FT_Load_Char(face, charcode, FT_LOAD_RENDER);
-	AdvanceX = (face->glyph->advance.x) >> 6;
-}
-
-Geometry FreeTypeFont::getGlyph3D()
-{
-	//加载字形
+	//load character face
 	FT_Error error = FT_Load_Char(face, charcode, FT_LOAD_DEFAULT);
 	if (error)
 		std::cout << "FT_Load_Char(...) error 0x" << std::hex << error << std::dec << std::endl;
 	if (face->glyph->format != FT_GLYPH_FORMAT_OUTLINE)
 		std::cout << "FreeTypeFont3D::getGlyph : not a vector font" << std::endl;
 
+	AdvanceX = (face->glyph->advance.x) >> 6;
+}
+
+Glyph3D FreeTypeFont::getGlyph3D()
+{
 	FT_Outline outline = face->glyph->outline;
 	FT_Outline_Funcs funcs;
 	funcs.conic_to = (FT_Outline_ConicToFunc)&FreeType::conicTo;
@@ -215,13 +200,10 @@ Geometry FreeTypeFont::getGlyph3D()
 	funcs.shift = 0;
 	funcs.delta = 0;
 
-	//分解字形轮廓线，注册回调函数
+	//register the callback function
 	FT_Error _error = FT_Outline_Decompose(&outline, &funcs, &char3d);
 	if (_error)
 		std::cout << "FreeTypeFont3D::getGlyph : - outline decompose failed ..." << std::endl;
 	
-	//返回字形几何体
 	return char3d.get();
 }
-
-#endif

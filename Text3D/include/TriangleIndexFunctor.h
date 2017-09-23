@@ -1,9 +1,7 @@
-#ifndef TRIANGLEINDEXFUNCTOR_H_
-#define TRIANGLEINDEXFUNCTOR_H_
+#pragma once
 
+#include <glad\glad.h>
 #include <vector>
-
-#include <GL\glew.h>
 #include <glm\glm.hpp>
 
 class PrimitiveIndexFunctor
@@ -341,5 +339,3 @@ public:
 	GLenum               _modeCache;
 	std::vector<GLuint>  _indexCache;
 };
-
-#endif

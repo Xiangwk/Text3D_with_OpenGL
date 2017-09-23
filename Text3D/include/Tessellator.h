@@ -1,15 +1,13 @@
-//这是细分器，内部使用glu库中的细分函数完成三角化操作
-
-#ifndef TESSELLATOR_H_
-#define TESSELLATOR_H_
+#pragma once
 
 #include <iostream>
 #include <map>
 
-#include <GL\glew.h>
+#include <glad\glad.h>
+#include <GL\GLU.H>
 #include <glm\glm.hpp>
 
-#include "Geometry.h"
+#include "Glyph3D.h"
 
 #define CALLBACK __stdcall
 typedef void (CALLBACK * GLU_TESS_CALLBACK)();
@@ -20,15 +18,14 @@ public:
 	Tessellator();
 	~Tessellator();
 
-	//细分多边形
-	void retessellatePolygons(Geometry &geom);
+	void retessellatePolygons(Glyph3D &geom);
 
-	//这个结构用于存储细分后的数据
+	//store the data which from glu triangulation
 	struct Prim
 	{
 		Prim(GLenum mode) :_mode(mode) {}
 
-		typedef std::vector<glm::vec3*> VecList;
+		using VecList = std::vector<glm::vec3*>;
 
 		GLenum  _mode;
 		VecList _vertices;
@@ -44,19 +41,18 @@ public:
 
 	void endTessellation();
 
-	typedef std::vector<Prim*> PrimList;
+	using PrimList = std::vector<Prim*>;
 
 	PrimList& getPrimList() { return _primList; }
 
 	void reset();
 
 private:
-	//收集细分好的数据
-	void collectTessellation(Geometry &geom, unsigned int originalIndex);
+	void collectTessellation(Glyph3D &geom, unsigned int originalIndex);
 
-	typedef std::map<glm::vec3*, unsigned int> VertexPtrToIndexMap;
+	using VertexPtrToIndexMap = std::map<glm::vec3*, unsigned int>;
 	void addContour(ElementArray* primitive, Vec3Array* vertices);
-	void handleNewVertices(Geometry& geom, VertexPtrToIndexMap &vertexPtrToIndexMap);
+	void handleNewVertices(Glyph3D& geom, VertexPtrToIndexMap &vertexPtrToIndexMap);
 
 	void begin(GLenum mode);
 	void vertex(glm::vec3* vertex);
@@ -133,8 +129,8 @@ private:
 
 	};
 
-	typedef std::vector<NewVertex> NewVertexList;
-	typedef std::vector<Vec3d*> Vec3dList;
+	using NewVertexList = std::vector<NewVertex>;
+	using Vec3dList = std::vector<Vec3d*>;
 
 	GLUtesselator*  _tobj;
 
@@ -152,6 +148,4 @@ private:
 	unsigned int _extraPrimitives;
 };
 
-void computeGlyphGeometry(Geometry &glyph, float width);
-
-#endif
+void computeGlyphGeometry(Glyph3D &glyph, float width);
