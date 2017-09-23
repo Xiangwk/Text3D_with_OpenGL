@@ -29,9 +29,13 @@ GLU库的文档可以看这里https://khronos.org/registry/OpenGL/specs/gl/glu1.
 
 Windows系统的字体文件可以在C:\Windows\Fonts路径下找到！
 
-工程中需要包含的第三方依赖库如下图：
+Text3D工程中需要包含的第三方依赖库如下图：
 
-<img src="http://ovi8mw7d8.bkt.clouddn.com/Text3D%E5%A4%96%E9%83%A8%E4%BE%9D%E8%B5%96.PNG" width="500" />
+<img src="http://ovi8mw7d8.bkt.clouddn.com/Text3D%E5%B7%A5%E7%A8%8B%E4%BE%9D%E8%B5%96%E5%BA%93.png" width="500" />
+
+Render_with_OpenGL工程中需要包含的第三方依赖库如下图：
+
+<img src="http://ovi8mw7d8.bkt.clouddn.com/Render_with_OpenGL%E9%A1%B9%E7%9B%AE%E4%BE%9D%E8%B5%96%E5%BA%93.png" width="500" />
 
 其中opengl32.lib和glu32.lib是已经在Windows系统中存在的了，其他系统尚不清楚，抱歉~
 
